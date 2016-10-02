@@ -1,0 +1,44 @@
+//#include <memory> // Либо <tr1/memory> для компиляторов, еще не поддерживающих C++11
+#include <boost/shared_ptr.hpp>
+#include <iostream>
+
+class MyObject {
+public:
+  void print() {
+    std::cout << "This is MyObject" << std::endl;
+  }
+};
+
+void printMyObject(boost::shared_ptr<MyObject> m) {
+  m->print();
+}
+
+int test() {
+    boost::shared_ptr<MyObject> p1(new MyObject);
+    boost::shared_ptr<MyObject> p2;
+    boost::shared_ptr<MyObject> p3(new MyObject);
+    
+    std::cout << "boost::shared_ptr" << std::endl;
+    std::cout << p1 << std::endl;
+    std::cout << p2 << std::endl;
+    std::cout << p3 << std::endl;
+    std::cout << "p1 = p2" << std::endl;
+    p2 = p1;    
+    std::cout << p1 << std::endl;
+    std::cout << p2 << std::endl;
+    std::cout << p3 << std::endl;
+    p3 = p1;
+    std::cout << "p3 = p2" << std::endl;
+    std::cout << p1 << std::endl;
+    std::cout << p2 << std::endl;
+    std::cout << p3 << std::endl;
+    std::cout << "call function with shared ptr as a param" << std::endl;
+    printMyObject(p1);
+
+    // if (p2)
+    //     std::cout << "Hello, world!\n";
+}
+
+int main() {
+  test();
+}

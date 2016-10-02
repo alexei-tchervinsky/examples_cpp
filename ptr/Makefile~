@@ -1,0 +1,5 @@
+all:\
+boost_shared_ptr
+
+boost_shared_ptr: boost_shared_ptr.cpp	
+	g++ -o boost_shared_ptr boost_shared_ptr.cpp

@@ -1,0 +1,21 @@
+//ChAP 2016-10-02 test for scope of shared pointers (btw, std::shared_ptr is the same as boost::shared_ptr according to habr
+
+#include <iostream>
+
+use namespace std;
+
+class A {
+  void print() {
+    cout << "I am class A instance" << endl;
+  }
+}
+
+void test_shared_ptr_scope 
+{
+  shared_ptr<A> pout;
+}
+
+int main()
+{
+  cout << "test for scope of shared pointers" << endl;
+}
