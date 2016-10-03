@@ -1,0 +1,5 @@
+exe chap_shared_ptr
+  : chap_shared_ptr.cpp
+  : <define>BOOST_ALL_NO_LIB=1
+    <threading>multi
+  ;
