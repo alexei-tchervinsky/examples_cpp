@@ -27,20 +27,8 @@ using boost::asio::ip::tcp;
 typedef std::deque<chat_message> chat_message_queue;
 
 //----------------------------------------------------------------------
-/*
-class chat_participant
-{
-public:
-  virtual ~chat_participant() {}
-  virtual void deliver(const chat_message& msg) = 0;
-};
-
-typedef boost::shared_ptr<chat_participant> chat_participant_ptr;
-*/
-//----------------------------------------------------------------------
 class chat_room;
 //----------------------------------------------------------------------
-//class chat_session : public chat_participant,
 class chat_session : 
       public boost::enable_shared_from_this<chat_session> {
 	public:
@@ -62,15 +50,6 @@ typedef boost::shared_ptr<chat_session> chat_session_ptr;
 class chat_room
 {
 public:
-/*
-  void join(chat_participant_ptr participant)
-  {
-		printf("ChAP %s:%d %s participant=%p\n", __FILE__, __LINE__, __FUNCTION__, &participant);
-    participants_.insert(participant);
-    std::for_each(recent_msgs_.begin(), recent_msgs_.end(),
-        boost::bind(&chat_participant::deliver, participant, _1));
-  }
-*/
   void join(chat_session_ptr session)
   {
 		printf("ChAP %s:%d %s session=%p socket=%p\n", __FILE__, __LINE__, __FUNCTION__, &session, &session->socket());
@@ -78,50 +57,12 @@ public:
     std::for_each(recent_msgs_.begin(), recent_msgs_.end(),
         boost::bind(&chat_session::deliver, session, _1));
   }
-/*
-  void leave(chat_participant_ptr participant)
-  {
-    participants_.erase(participant);
-  }
-*/
+
   void leave(chat_session_ptr session)
   {
     sessions_.erase(session);
   }
-/*
-  void deliver(const chat_message& msg)
-  {
 
-	 recent_msgs_.push_back(msg);
-    while (recent_msgs_.size() > max_recent_msgs)
-      recent_msgs_.pop_front();
-
-		printf("ChAP %s:%d %s participant=%p type=%d username=%s data=%s\n", __FILE__, __LINE__, __FUNCTION__, &participant, msg.message_type(), msg.username(), msg.data());
-		if (msg.message_type() == SET_USERNAME) {
-			const boost::shared_ptr<chat_message> m (new chat_message());
-			m->message_type(CONNECT);
-//			m->username(msg.username());
-			m->username("foo");
-			std::for_each(participants_.begin(), participants_.end(),
-        boost::bind(&chat_participant::deliver, _1, boost::ref(*m)));
-		}
-		else if (msg.message_type() == PUBLIC_MESSAGE)
-		{
-			std::for_each(participants_.begin(), participants_.end(),
-					boost::bind(&chat_participant::deliver, _1, boost::ref(msg)));
-		}
-		else if (msg.message_type() == PRIVATE_MESSAGE)
-		{
-			//boost::bind(&participant::deliver, _1, NULL); // FIXME
-		}
-		
-		
-		{
-			printf("ChAP %s:%d %s Unknown msg type %d\n", __FILE__, __LINE__, __FUNCTION__, msg.message_type());
-		}
-			
-  }
-*/
   void deliver(const chat_message& msg)
   {
 
@@ -156,7 +97,6 @@ public:
   }
 
 private:
-//  std::set<chat_participant_ptr> participants_;
   std::set<chat_session_ptr> sessions_;
   enum { max_recent_msgs = 100 };
   chat_message_queue recent_msgs_;
@@ -165,10 +105,7 @@ private:
 //----------------------------------------------------------------------
 
 //class chat_session
-// : public chat_participant,
-//    public boost::enable_shared_from_this<chat_session>
-//{
-//public:
+
   chat_session::chat_session(boost::asio::io_service& io_service, chat_room& room)
     : socket_(io_service),
       room_(room)
@@ -288,14 +225,6 @@ private:
     }
   }
 
-//private:
-//  tcp::socket socket_;
-//  chat_room& room_;
-//  chat_message read_msg_;
-//  chat_message_queue write_msgs_;
-//};
-
-//typedef boost::shared_ptr<chat_session> chat_session_ptr;
 
 //----------------------------------------------------------------------
 
