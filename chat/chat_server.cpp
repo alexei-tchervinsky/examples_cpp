@@ -41,6 +41,7 @@ class chat_session :
 		void handle_write(const boost::system::error_code& error);
 		int  set_username(const chat_message &msg, boost::shared_ptr<chat_session> session); 
 		void send_connected(chat_message &msg); 
+		void close() { socket_.close(); }
 		void print();
 		
 private:
@@ -66,7 +67,16 @@ public:
 
   void leave(chat_session_ptr session)
   {
+		chat_message msg;
     sessions_.erase(session);
+		session->close();
+		if (strlen(session->username())!=0) // if user name was defined
+		{
+			msg.message_type(DISCONNECT); // inform other user about disconnect
+			msg.username(session->username());
+			std::for_each(sessions_.begin(), sessions_.end(),
+				boost::bind(&chat_session::deliver, _1, msg));
+		}
   }
 
   void deliver(const chat_message& msg, chat_session_ptr session)
@@ -78,6 +88,37 @@ public:
 
 		printf("ChAP room::deliver %s:%d %s session=%p type=%d username=%s data=%s\n", __FILE__, __LINE__, __FUNCTION__, &session, msg.message_type(), msg.username(), msg.data());
 		if (msg.message_type() == SET_USERNAME) {
+
+			std::set<chat_session_ptr>::iterator i;
+			for (i = sessions_.begin(); i != sessions_.end(); ++i)
+			{
+				if (strncmp((*i)->username(), msg.username(), USERNAME_MAX_LEN) == 0) // duplicate name
+				{
+					session->close();
+					return;
+				}
+					
+				{
+					printf("ChAP %s:%d %s %s\n", __FILE__, __LINE__, __FUNCTION__, "sender found");
+					std::set<chat_session_ptr>::iterator j;
+					for (j = sessions_.begin(); j != sessions_.end(); ++j)
+					{
+						if (strncmp((*j)->username(), msg.username(), USERNAME_MAX_LEN) == 0) 
+						{ // target found
+							printf("ChAP %s:%d %s %s\n", __FILE__, __LINE__, __FUNCTION__, "target found");
+							const boost::shared_ptr<chat_message> m (new chat_message()); // new message to modify
+							m->message_type(msg.message_type()); // type
+							m->username((*i)->username()); // set user name to sender
+							m->data(msg.data()); //data
+							(*j)->deliver(*m); // and send to target
+							break;
+						}
+					}
+					break;
+				}
+				
+			}
+			
 			std::for_each(sessions_.begin(), sessions_.end(),
 				boost::bind(&chat_session::set_username, _1, msg, session)); // set user name for the given session
 			std::for_each(sessions_.begin(), sessions_.end(), // log the sessions
@@ -238,7 +279,7 @@ private:
     }
     else
     {
-			printf("ChAP %s:%d %s\n", __FILE__, __LINE__, __FUNCTION__);
+			printf("ChAP %s:%d %s error=%d\n", __FILE__, __LINE__, __FUNCTION__, error);
       room_.leave(shared_from_this());
     }
   }
@@ -294,6 +335,7 @@ private:
 			}
 			this->deliver(msg); 
 	}
+	
 	
 	void chat_session::print()
 	{
