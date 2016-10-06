@@ -110,7 +110,8 @@ public:
 			for (i = sessions_.begin(); i != sessions_.end(); ++i)
 			{
 				printf("ChAP %s:%d %s itersock=%p sessock=%p\n", __FILE__, __LINE__, __FUNCTION__, &(*i)->socket(), &(session->socket()));
-				if (&(*i)->socket() == &(session->socket())) // sender found
+//				if (&(*i)->socket() == &(session->socket())) // sender found
+				if ((*i)->socket().remote_endpoint() == (session->socket()).remote_endpoint()) // TODO: sender found
 				{
 					printf("ChAP %s:%d %s %s\n", __FILE__, __LINE__, __FUNCTION__, "sender found");
 					std::set<chat_session_ptr>::iterator j;
@@ -272,7 +273,8 @@ private:
   
   int chat_session::set_username(const chat_message &msg, chat_session_ptr session) 
   {
-		if (&(this->socket()) == &(session->socket())) 
+//		if (&(this->socket()) == &(session->socket())) 
+		if ((this->socket().remote_endpoint()) == (session->socket().remote_endpoint())) 
 		{
 			strncpy(this->username_, msg.username(), USERNAME_MAX_LEN);
 		}
@@ -295,7 +297,7 @@ private:
 	
 	void chat_session::print()
 	{
-		printf("session=%p username_=%s\n", this, username_);
+		printf("session=%p username_=%s local port=%d remote port=%d\n", this, username_, socket().local_endpoint().port(), socket().remote_endpoint().port());
 	}
 
 
