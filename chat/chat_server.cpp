@@ -70,7 +70,7 @@ public:
 		chat_message msg;
     sessions_.erase(session);
 		session->close();
-		if (strlen(session->username())!=0) // if user name was defined
+//		if (strlen(session->username())!=0) // if user name was defined
 		{
 			msg.message_type(DISCONNECT); // inform other user about disconnect
 			msg.username(session->username());
