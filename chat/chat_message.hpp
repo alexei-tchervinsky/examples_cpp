@@ -159,10 +159,10 @@ public:
         return msg_.username;
     }
     
-    void username (const char *name)
+    void username (const char *name) 
     {
 //        strncpy(msg_.username_, name, max_username_length);
-        strncpy(msg_.username, name, max_username_length);
+        strncpy(msg_.username, name, USERNAME_MAX_LEN);
     }
     
     char* msg()
@@ -170,6 +170,10 @@ public:
         return (char*)&msg_;
     }
 
+    void data(const char *data) 
+    {
+        strncpy(msg_.data, data, DATA_MAX_LEN);
+    }
 private:
 /*
   struct {

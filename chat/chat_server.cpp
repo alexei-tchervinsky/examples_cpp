@@ -34,15 +34,21 @@ class chat_session :
 	public:
 		chat_session(boost::asio::io_service& io_service, chat_room& room);
 		tcp::socket& socket();
+		const char  *username() const { return username_; }
 		void start();
 		void deliver(const chat_message& msg);
 		void handle_read_body(const boost::system::error_code& error);
 		void handle_write(const boost::system::error_code& error);
+		int  set_username(const chat_message &msg, boost::shared_ptr<chat_session> session); 
+		void send_connected(chat_message &msg); 
+		void print();
+		
 private:
   tcp::socket socket_;
   chat_room& room_;
   chat_message read_msg_;
   chat_message_queue write_msgs_;		
+	char username_[USERNAME_MAX_LEN];
 	};
 typedef boost::shared_ptr<chat_session> chat_session_ptr;
 //----------------------------------------------------------------------
@@ -54,8 +60,8 @@ public:
   {
 		printf("ChAP %s:%d %s session=%p socket=%p\n", __FILE__, __LINE__, __FUNCTION__, &session, &session->socket());
     sessions_.insert(session);
-    std::for_each(recent_msgs_.begin(), recent_msgs_.end(),
-        boost::bind(&chat_session::deliver, session, _1));
+//    std::for_each(recent_msgs_.begin(), recent_msgs_.end(),
+//        boost::bind(&chat_session::deliver, session, _1));
   }
 
   void leave(chat_session_ptr session)
@@ -63,21 +69,28 @@ public:
     sessions_.erase(session);
   }
 
-  void deliver(const chat_message& msg)
+  void deliver(const chat_message& msg, chat_session_ptr session)
   {
 
 	 recent_msgs_.push_back(msg);
     while (recent_msgs_.size() > max_recent_msgs)
       recent_msgs_.pop_front();
 
-		printf("ChAP %s:%d %s type=%d username=%s data=%s\n", __FILE__, __LINE__, __FUNCTION__, msg.message_type(), msg.username(), msg.data());
+		printf("ChAP room::deliver %s:%d %s session=%p type=%d username=%s data=%s\n", __FILE__, __LINE__, __FUNCTION__, &session, msg.message_type(), msg.username(), msg.data());
 		if (msg.message_type() == SET_USERNAME) {
+			std::for_each(sessions_.begin(), sessions_.end(),
+				boost::bind(&chat_session::set_username, _1, msg, session)); // set user name for the given session
+			std::for_each(sessions_.begin(), sessions_.end(), // log the sessions
+				boost::bind(&chat_session::print, _1));
 			const boost::shared_ptr<chat_message> m (new chat_message());
-			m->message_type(CONNECT);
-//			m->username(msg.username());
-			m->username("foo");
+			m->username(msg.username());
+/*			
 			std::for_each(sessions_.begin(), sessions_.end(),
         boost::bind(&chat_session::deliver, _1, boost::ref(*m)));
+*/        
+			std::for_each(sessions_.begin(), sessions_.end(), // inform other users
+        boost::bind(&chat_session::send_connected, _1, boost::ref(*m)));
+        
 		}
 		else if (msg.message_type() == PUBLIC_MESSAGE)
 		{
@@ -86,10 +99,42 @@ public:
 		}
 		else if (msg.message_type() == PRIVATE_MESSAGE)
 		{
+   		
+   		std::for_each(sessions_.begin(), sessions_.end(), // log with for each
+				boost::bind(&chat_session::print, _1));
+			std::set<chat_session_ptr>::iterator k;           // log with iterator
+			for (k = sessions_.begin(); k != sessions_.end(); ++k)
+				(*k)->print();
+				
+			std::set<chat_session_ptr>::iterator i;
+			for (i = sessions_.begin(); i != sessions_.end(); ++i)
+			{
+				printf("ChAP %s:%d %s itersock=%p sessock=%p\n", __FILE__, __LINE__, __FUNCTION__, &(*i)->socket(), &(session->socket()));
+				if (&(*i)->socket() == &(session->socket())) // sender found
+				{
+					printf("ChAP %s:%d %s %s\n", __FILE__, __LINE__, __FUNCTION__, "sender found");
+					std::set<chat_session_ptr>::iterator j;
+					for (j = sessions_.begin(); j != sessions_.end(); ++j)
+					{
+						if (strncmp((*j)->username(), msg.username(), USERNAME_MAX_LEN) == 0) 
+						{ // target found
+							printf("ChAP %s:%d %s %s\n", __FILE__, __LINE__, __FUNCTION__, "target found");
+							const boost::shared_ptr<chat_message> m (new chat_message()); // new message to modify
+							m->message_type(msg.message_type()); // type
+							m->username((*i)->username()); // set user name to sender
+							m->data(msg.data()); //data
+							(*j)->deliver(*m); // and send to target
+							break;
+						}
+					}
+					break;
+				}
+				
+			}
+			
 			//boost::bind(&participant::deliver, _1, NULL); // FIXME
 		}
-		
-		
+		else		
 		{
 			printf("ChAP %s:%d %s Unknown msg type %d\n", __FILE__, __LINE__, __FUNCTION__, msg.message_type());
 		}
@@ -143,12 +188,12 @@ private:
     write_msgs_.push_back(msg);
     if (!write_in_progress)
     {
-			printf("ChAP %s:%d %s socket=%p username=%s\n", __FILE__, __LINE__, __FUNCTION__, &socket_, msg.username());
+			printf("ChAP %s:%d %s socket=%p type=%d username=%s data=%s\n", __FILE__, __LINE__, __FUNCTION__, &socket_, msg.message_type(), msg.username(), msg.data());
       boost::asio::async_write(socket_,
 //          boost::asio::buffer(write_msgs_.front().data(),
 //            write_msgs_.front().length()),
 //          boost::asio::buffer(&m, sizeof(::message_type)+strlen(m->username())),
-          boost::asio::buffer((const char*)&msg, sizeof(::message_type)+strlen(msg.username())),
+          boost::asio::buffer((const char*)&msg, msg.length()),
           boost::bind(&chat_session::handle_write, shared_from_this(),
             boost::asio::placeholders::error));
     }
@@ -181,7 +226,7 @@ private:
     if (!error)
     {
 			printf("ChAP %s:%d %s length=%d\n", __FILE__, __LINE__, __FUNCTION__, read_msg_.length());
-      room_.deliver(read_msg_);
+      room_.deliver(read_msg_, shared_from_this());
       boost::asio::async_read(socket_,
 //          boost::asio::buffer(read_msg_.data(), chat_message::header_length),
 //          boost::asio::buffer(read_msg_.msg(), read_msg_, chat_message::max_msg_length),
@@ -224,6 +269,34 @@ private:
       room_.leave(shared_from_this());
     }
   }
+  
+  int chat_session::set_username(const chat_message &msg, chat_session_ptr session) 
+  {
+		if (&(this->socket()) == &(session->socket())) 
+		{
+			strncpy(this->username_, msg.username(), USERNAME_MAX_LEN);
+		}
+		return 0;
+	}
+	
+	// send connected message
+	void chat_session::send_connected(chat_message &msg)
+	{
+		printf("ChAP %s:%d %s this->username_=%s msg.username()=%s\n", __FILE__, __LINE__, __FUNCTION__, this->username_, msg.username());
+			if (strncmp(this->username_, msg.username(), USERNAME_MAX_LEN) == 0) // check for my own name
+			{
+				msg.message_type(SUCCESS); // for own send SUCCESS
+			}
+			else {
+				msg.message_type(CONNECT); // for other send CONNECT
+			}
+			this->deliver(msg); 
+	}
+	
+	void chat_session::print()
+	{
+		printf("session=%p username_=%s\n", this, username_);
+	}
 
 
 //----------------------------------------------------------------------
