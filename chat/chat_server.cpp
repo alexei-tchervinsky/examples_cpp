@@ -70,7 +70,7 @@ public:
 		chat_message msg;
     sessions_.erase(session);
 		session->close();
-//		if (strlen(session->username())!=0) // if user name was defined
+		if (strlen(session->username())!=0) // if user name was defined
 		{
 			msg.message_type(DISCONNECT); // inform other user about disconnect
 			msg.username(session->username());
@@ -176,11 +176,30 @@ public:
 			
 			//boost::bind(&participant::deliver, _1, NULL); // FIXME
 		}
+		else if (msg.message_type() == GET_USERS) 
+		{
+			const boost::shared_ptr<chat_message> m (new chat_message()); // new message to modify
+			char l[DATA_MAX_LEN]; 
+			char *lp = l;
+			m->message_type(msg.message_type());
+			std::set<chat_session_ptr>::iterator i;
+			for (i = sessions_.begin(); i != sessions_.end(); ++i)
+			{
+				std::cout << "ChAP user " << (*i)->username() << std::endl;
+				lp = stpcpy(lp, (*i)->username()); // NB stpcpy
+				std::cout << "ChAP l " << l << std::endl;
+				lp = stpcpy(lp, "\n"); // NB stpcpy
+				std::cout << "ChAP l " << l << std::endl;
+			}
+			*lp = 0;
+			std::cout << "ChAP user list" << l << std::endl;
+			strncpy(m->data(), l, DATA_MAX_LEN);
+			session->deliver(*m);	
+		}
 		else		
 		{
 			printf("ChAP %s:%d %s Unknown msg type %d\n", __FILE__, __LINE__, __FUNCTION__, msg.message_type());
 		}
-			
   }
 
 private:
@@ -267,7 +286,7 @@ private:
 		printf("ChAP %s:%d %s\n", __FILE__, __LINE__, __FUNCTION__);
     if (!error)
     {
-			printf("ChAP %s:%d %s length=%d\n", __FILE__, __LINE__, __FUNCTION__, read_msg_.length());
+			printf("ChAP %s:%d %s length=%d\n", __FILE__, __LINE__, __FUNCTION__, (int)(read_msg_.length()));
       room_.deliver(read_msg_, shared_from_this());
       boost::asio::async_read(socket_,
 //          boost::asio::buffer(read_msg_.data(), chat_message::header_length),
@@ -279,14 +298,16 @@ private:
     }
     else
     {
-			printf("ChAP %s:%d %s error=%d\n", __FILE__, __LINE__, __FUNCTION__, error);
+//			printf("ChAP %s:%d %s error=%d\n", __FILE__, __LINE__, __FUNCTION__, error);
+			std::cout << "ChAP " << __FILE__ << ":" << __LINE__ << " " << __FUNCTION__ << " " <<  error.message() << std::endl;
       room_.leave(shared_from_this());
     }
   }
 
   void chat_session::handle_write(const boost::system::error_code& error)
   {
-		printf("ChAP %s:%d %s error %d\n", __FILE__, __LINE__, __FUNCTION__, error);
+//		printf("ChAP %s:%d %s error %d\n", __FILE__, __LINE__, __FUNCTION__, error);
+		std::cout << "ChAP " << __FILE__ << ":" << __LINE__ << " " <<  __FUNCTION__ << " "<<  error.message() << std::endl;
 		
     if (!error)
     {

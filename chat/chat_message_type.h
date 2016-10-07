@@ -4,10 +4,11 @@
 #define CHAT_MESSAGE_TYPE_H_
 
 //Enum of different messages possible.
-/*
+
 typedef enum
 {
-  CONNECT = 0,
+//  CONNECT = 0,
+  CONNECT,
   DISCONNECT,
   GET_USERS,
   SET_USERNAME,
@@ -19,7 +20,8 @@ typedef enum
   ERROR
 
 } message_type;
-*/
+
+/*
 typedef int message_type;
 
 #define CONNECT  0
@@ -32,7 +34,7 @@ typedef int message_type;
 #define USERNAME_ERROR  7
 #define SUCCESS  8
 #define ERROR  9
-
+*/
 
 #define USERNAME_MAX_LEN 21
 #define DATA_MAX_LEN 256
