@@ -1,1 +1,9 @@
 Chat server on boost asio for chatroom client written in C. 
+
+chat_server.cpp is based on callback. Message processing is made in the 
+instance of class 'chat_room'. The processing is centralized.
+
+chat_server_spawn.cpp is based on stackful coroutines. 
+Message processing is made in each instance of class 'session'. 
+The processing is decentralized. 
+Class 'chat_room' is used only to keep all instances of class 'session'.
