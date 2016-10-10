@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <boost/shared_ptr.hpp>
 
 #include "chat_message_type.h"
 
@@ -188,5 +189,8 @@ private:
 //  char data_[max_username_length + max_body_length];
     size_t body_length_;
 };
+
+//----------------------------------------------------------------------
+typedef boost::shared_ptr<chat_message> chat_message_ptr;
 
 #endif // CHAT_MESSAGE_HPP

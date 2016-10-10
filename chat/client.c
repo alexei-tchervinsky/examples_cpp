@@ -233,7 +233,7 @@ void handle_server_message(connection_info *connection)
   }
   
   printf("ChAP %s:%d %s msg.type=%d\n", __FILE__, __LINE__, __FUNCTION__, msg.type);
-  /*
+ 
   switch(msg.type)
   {
 
@@ -260,6 +260,10 @@ void handle_server_message(connection_info *connection)
     case PRIVATE_MESSAGE:
       printf(KWHT "From %s:" KCYN " %s\n" RESET, msg.username, msg.data);
     break;
+    
+    case USERNAME_ERROR:
+		printf(KRED "%s\n" RESET, msg.data);
+	break;
 
     case TOO_FULL:
       fprintf(stderr, KRED "Server chatroom is too full to accept new clients." RESET "\n");
@@ -270,7 +274,7 @@ void handle_server_message(connection_info *connection)
       fprintf(stderr, KRED "Unknown message type received." RESET "\n");
     break;
   }
-  */
+ /*
     if (msg.type == CONNECT) 
     {
       printf(KYEL "%s has connected." RESET "\n", msg.username);
@@ -304,6 +308,7 @@ void handle_server_message(connection_info *connection)
     {
       fprintf(stderr, KRED "Unknown message type received." RESET "\n");
     }
+*/
 }
 
 int main(int argc, char *argv[])

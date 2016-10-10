@@ -129,6 +129,10 @@ private:
 		{
 			get_users(read_msg_, yield);
 		}
+		else if (read_msg_.message_type() == PRIVATE_MESSAGE)
+		{
+			send_private_message(read_msg_, yield);
+		}
 //        boost::asio::async_write(socket_, boost::asio::buffer(data, n), yield);
       }
     }
@@ -228,6 +232,31 @@ char * del_user(const chat_message &msg)
 	}
   }
   
+//----------------------------------------------------------------------
+  void send_private_message(const chat_message &msg, boost::asio::yield_context yield)
+  {
+	  const chat_message_ptr m( new chat_message() );
+	  
+	std::set<chat_session_ptr>::iterator i;
+	for (i = room_->begin(); i != room_->end(); ++i)
+	{
+		if (strncmp((*i)->username(), msg.username(), USERNAME_MAX_LEN) == 0)
+		{
+			m->username(this->username());
+			m->message_type(PRIVATE_MESSAGE);
+			m->data(msg.data());
+			(*i)->deliver(*m, yield);
+			return;
+		}
+	}
+	m->message_type(USERNAME_ERROR);
+	char unem[DATA_MAX_LEN];
+	sprintf(unem, "Username \"%s\" does not exist or is not logged in.", msg.username());
+	m->data(unem);
+	this->deliver(*m, yield);
+  }
+  
+
 //----------------------------------------------------------------------
   void send_disconnect_message(const chat_message &msg, boost::asio::yield_context yield)
   {

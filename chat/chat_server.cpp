@@ -97,7 +97,7 @@ public:
 					session->close();
 					return;
 				}
-					
+/*					
 				{
 					printf("ChAP %s:%d %s %s\n", __FILE__, __LINE__, __FUNCTION__, "sender found");
 					std::set<chat_session_ptr>::iterator j;
@@ -116,9 +116,9 @@ public:
 					}
 					break;
 				}
-				
+*/
 			}
-			
+
 			std::for_each(sessions_.begin(), sessions_.end(),
 				boost::bind(&chat_session::set_username, _1, msg, session)); // set user name for the given session
 			std::for_each(sessions_.begin(), sessions_.end(), // log the sessions

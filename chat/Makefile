@@ -13,17 +13,23 @@ LDFLAGS=
 #LDLIBS=$(shell root-config --libs)
 #LDLIBS=-lboost_system -lpthread -lboost_thread
 LDLIBS_SERVER=-lboost_system -lboost_thread -lpthread
+LDLIBS_SERVER_SPAWN = -lboost_system -lboost_thread -lpthread -lboost_coroutine -lboost_context 
 LDLIBS_CLIENT=-lpthread
 
 SRCS_SERVER=chat_server.cpp
+SRCS_SERVER_SPAWN=chat_server_spawn.cpp
 SRCS_CLIENT=client.c chatroom_utils.c
 OBJS_SERVER=$(subst .cpp,.o,$(SRCS_SERVER))
+OBJS_SERVER_SPAWN=$(subst .cpp,.o,$(SRCS_SERVER_SPAWN))
 OBJS_CLIENT=$(subst .c,.o,$(SRCS_CLIENT))
 
-all: chat_server client
+all: chat_server client chat_server_spawn
 
 chat_server: $(OBJS_SERVER) chat_message.hpp chat_message_type.h Makefile
 	$(CXX) $(CPPFLAGS_SERVER) $(LDFLAGS) -o chat_server $(OBJS_SERVER) $(LDLIBS_SERVER) 
+	
+chat_server_spawn: $(OBJS_SERVER_SPAWN) chat_message.hpp chat_message_type.h Makefile
+	$(CXX) $(CPPFLAGS_SERVER) $(LDFLAGS) -o chat_server_spawn $(OBJS_SERVER_SPAWN) $(LDLIBS_SERVER_SPAWN) 
 	
 #chat_client: $(OBJS_CLIENT) Makefile
 #	$(CXX) $(LDFLAGS) -o chat_client $(OBJS_CLIENT) $(LDLIBS) 
