@@ -110,6 +110,33 @@ void connect_to_server(connection_info *connection, char *address, char *port)
   puts("Type /help for usage.");
 }
 
+void send_public_message(connection_info *connection, char *input) 
+{
+    message msg;
+    msg.type = PUBLIC_MESSAGE;
+    strncpy(msg.username, connection->username, 20);
+
+    // clear_stdin_buffer();
+
+    if(strlen(input) == 0) {
+        return;
+    }
+
+    strncpy(msg.data, input, 255);
+//    printf("ChAP %s:%d %s Public Message msg.type=%d sizeof(msg)=%d\n", __FILE__, __LINE__, __FUNCTION__, msg.type, sizeof(msg)); 
+    //Send some data
+    if(send(connection->socket, &msg, sizeof(message), 0) < 0)
+    {
+        perror("Send failed");
+        exit(1);
+    }
+
+}
+
+int silent_mode = 0;
+int batch_mode = 0;
+int batch_limit = 0;
+int batch_counter = 0;
 
 void handle_user_input(connection_info *connection)
 {
@@ -137,6 +164,9 @@ void handle_user_input(connection_info *connection)
     puts("/quit or /q: Exit the program.");
     puts("/help or /h: Displays help information.");
     puts("/list or /l: Displays list of users in chatroom.");
+    puts("/batch or /b: Send <number of repeats (0 - endless)> <global message>.");
+    puts("/cancel or /c: Cancel batch mode (useful by endless batch.");
+    puts("/silent or /s: Silent mode <1 or 0>.");
     puts("/m <username> <message> Send a private message to given username.");
   }
   else if(strncmp(input, "/m", 2) == 0)
@@ -185,38 +215,60 @@ void handle_user_input(connection_info *connection)
     }
 
   }
+  else if(strncmp(input, "/b", 2) == 0)
+  {
+
+	batch_mode = 1;
+	
+    char *chatMsg = NULL;
+
+
+    batch_limit = atoi(strtok(input+3, " "));
+    printf("ChAP batch_limit=%d\n", batch_limit);
+    batch_counter = 0;
+    
+    chatMsg = strtok(NULL, "");
+    
+    send_public_message(connection, chatMsg);
+
+/*    
+    if (number_of_repeats != 0)
+		for (i=0; i<number_of_repeats; i++)
+		{
+			send_public_message(connection, chatMsg);
+		}
+	else 
+		while (1)
+		{
+			send_public_message(connection, chatMsg);
+		}
+*/ 
+  }
+  else if(strncmp(input, "/s", 2) == 0)
+  {
+    silent_mode = atoi(strtok(input+3, " "));
+  }
+  
+  else if(strncmp(input, "/c", 2) == 0)
+  {
+    batch_mode = 0;
+  }
+  
+
   else //regular public message
   {
-    message msg;
-    msg.type = PUBLIC_MESSAGE;
-    strncpy(msg.username, connection->username, 20);
-
-    // clear_stdin_buffer();
-
-    if(strlen(input) == 0) {
-        return;
-    }
-
-    strncpy(msg.data, input, 255);
-    printf("ChAP %s:%d %s Public Message msg.type=%d sizeof(msg)=%d\n", __FILE__, __LINE__, __FUNCTION__, msg.type, sizeof(msg)); 
-    //Send some data
-    if(send(connection->socket, &msg, sizeof(message), 0) < 0)
-    {
-        perror("Send failed");
-        exit(1);
-    }
+	  send_public_message(connection, input);
   }
-
-
 
 }
 
-static i=0;
+//static i=0;
+
 
 void handle_server_message(connection_info *connection)
 {
   message msg;
-  printf("ChAP %s:%d %s i=%d\n", __FILE__, __LINE__, __FUNCTION__, i++);
+//  printf("ChAP %s:%d %s i=%d\n", __FILE__, __LINE__, __FUNCTION__, i++);
   //Receive a reply from the server
   ssize_t recv_val = recv(connection->socket, &msg, sizeof(message), 0);
   if(recv_val < 0)
@@ -232,7 +284,7 @@ void handle_server_message(connection_info *connection)
     exit(0);
   }
   
-  printf("ChAP %s:%d %s msg.type=%d\n", __FILE__, __LINE__, __FUNCTION__, msg.type);
+//  printf("ChAP %s:%d %s msg.type=%d\n", __FILE__, __LINE__, __FUNCTION__, msg.type);
  
   switch(msg.type)
   {
@@ -254,7 +306,37 @@ void handle_server_message(connection_info *connection)
     break;
 
     case PUBLIC_MESSAGE:
-      printf(KGRN "%s" RESET ": %s\n", msg.username, msg.data);
+      if (batch_mode)
+      {
+        if (batch_limit != 0)
+        {
+          if (batch_counter++ < batch_limit)
+          {
+            if (silent_mode == 0)
+              printf(KGRN "%s" RESET ": %d of %d: %s\n", msg.username,  batch_counter, batch_limit,  msg.data);
+              
+            send_public_message(connection, msg.data); // repeat the public message
+          }
+          else
+          {
+            batch_mode = 0;
+          }
+        }
+        else
+        {
+          batch_counter++;
+          if (silent_mode == 0)
+            printf(KGRN "%s" RESET ": %d of endless %s\n", msg.username, batch_counter, msg.data);
+            
+          send_public_message(connection, msg.data); // repeat the public message
+        }
+      }
+	  else 
+      { // single mode
+        if (silent_mode == 0)
+          printf(KGRN "%s" RESET ": %s\n", msg.username, msg.data);
+      }
+		
     break;
 
     case PRIVATE_MESSAGE:
