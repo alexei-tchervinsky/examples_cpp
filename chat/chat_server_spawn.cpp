@@ -8,6 +8,8 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+// Modified by Alexei Tchervinsky (alexey dot tchervinsky at gmail dot com)
+
 #include <boost/asio.hpp>
 
 #include <boost/asio/deadline_timer.hpp>
@@ -138,11 +140,12 @@ private:
     }
     catch (std::exception& e)
     {
+		std::cout << "Exception: " << e.what() << " session=" << this << " username=" << username() << std::endl;
 		if (strlen(username()) != 0) {
 			room_->leave(shared_from_this());
 			const chat_message_ptr m( new chat_message() );
 			m->username(username());
-			send_disconnect_message(*m, yield);
+//			send_disconnect_message(*m, yield);
 		}
 	}
 /*    	
@@ -399,7 +402,7 @@ int main(int argc, char* argv[])
   {
     if (argc != 2)
     {
-      std::cerr << "Usage: echo_server <port>\n";
+      std::cerr << "Usage: chat_server_spawn <port>\n";
       return 1;
     }
 

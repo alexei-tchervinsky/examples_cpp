@@ -1,4 +1,4 @@
-// ChAP separate file for message type
+// Modified by Alexei Tchervinsky (alexey dot tchervinsky at gmail dot com)
 
 #ifndef CHAT_MESSAGE_TYPE_H_
 #define CHAT_MESSAGE_TYPE_H_

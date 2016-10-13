@@ -8,6 +8,8 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+// Modified by Alexei Tchervinsky (alexey dot tchervinsky at gmail dot com)
+
 #ifndef CHAT_MESSAGE_HPP
 #define CHAT_MESSAGE_HPP
 

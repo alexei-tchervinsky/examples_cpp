@@ -1,4 +1,4 @@
-# kdg768 2016-09-29
+# Modified by Alexei Tchervinsky (alexey dot tchervinsky at gmail dot com)
 # http://stackoverflow.com/questions/2481269/how-to-make-a-simple-c-makefile
 
 CC=gcc

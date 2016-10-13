@@ -6,6 +6,8 @@
 *
 */
 
+// Modified by Alexei Tchervinsky (alexey dot tchervinsky at gmail dot com)
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
